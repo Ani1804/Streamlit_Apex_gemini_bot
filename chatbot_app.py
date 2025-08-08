@@ -41,7 +41,7 @@ def add_background(image_path):
 add_background("danfoss image.jpg")  # Ensure image is present in same folder
 
 # --- Configure Gemini ---
-genai.configure(api_key=os.getenv("AIzaSyC3IWoW_QvQ1WJRpZCHVZhH9sSL4475-4E"))
+genai.configure(st.secrets.get("GOOGLE_API_KEY")))
 model = genai.GenerativeModel("models/gemini-1.5-flash")
 chat = model.start_chat(history=[])
 
@@ -54,7 +54,7 @@ current_time = datetime.now(ist).strftime("%A, %d %B %Y • %I:%M %p")
 
 # --- Weather & News ---
 def get_weather(city="Chennai"):
-    api_key = os.getenv("35747c2e49855eabf921aa5801d936d5")
+    api_key = st.secrets.get("OPENWEATHER_API_KEY")
     if not api_key:
         return "Weather API key not found."
     
@@ -73,7 +73,11 @@ def get_weather(city="Chennai"):
 
 
 def get_top_news():
-    url = "https://newsapi.org/v2/top-headlines?country=in&apiKey=6636a8f3659b475382b502b56c9415d8&pageSize=3"
+    api_key_news = st.secrets.get("NEWS_API_KEY") or os.getenv("NEWS_API_KEY")
+    if not api_key_news:
+        return "News API key not found."
+
+    url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={api_key_news}&pageSize=3"
     response = requests.get(url).json()
     if response.get("articles"):
         headlines = [f"• {article['title']}" for article in response["articles"][:3]]
