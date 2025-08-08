@@ -41,7 +41,7 @@ def add_background(image_path):
 add_background("danfoss image.jpg")  # Ensure image is present in same folder
 
 # --- Configure Gemini ---
-genai.configure(st.secrets.get("GOOGLE_API_KEY")))
+genai.configure(st.secrets.get("GOOGLE_API_KEY"))
 model = genai.GenerativeModel("models/gemini-1.5-flash")
 chat = model.start_chat(history=[])
 
@@ -73,7 +73,7 @@ def get_weather(city="Chennai"):
 
 
 def get_top_news():
-    api_key_news = st.secrets.get("NEWS_API_KEY") or os.getenv("NEWS_API_KEY")
+    api_key_news = st.secrets.get("NEWS_API_KEY") 
     if not api_key_news:
         return "News API key not found."
 
