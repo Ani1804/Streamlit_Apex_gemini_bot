@@ -41,7 +41,12 @@ def add_background(image_path):
 add_background("danfoss image.jpg")  # Ensure image is present in same folder
 
 # --- Configure Gemini ---
-genai.configure(st.secrets.get("GOOGLE_API_KEY"))
+genai_api_key = st.secrets.get("GOOGLE_API_KEY")
+if not genai_api_key:
+    st.error("Gemini API key not found in secrets!")
+else:
+    genai.configure(genai_api_key)
+
 model = genai.GenerativeModel("models/gemini-1.5-flash")
 chat = model.start_chat(history=[])
 
@@ -58,7 +63,8 @@ def get_weather(city="Chennai"):
     if not api_key:
         return "Weather API key not found."
     
-    url = f"https://api.openweathermap.org/data/2.5/weather?q={"chennai"}&appid={"35747c2e49855eabf921aa5801d936d5"}&units=metric"
+    # Use city variable & api_key from secrets
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     
     try:
         response = requests.get(url, timeout=10).json()
@@ -73,16 +79,19 @@ def get_weather(city="Chennai"):
 
 
 def get_top_news():
-    api_key_news = st.secrets.get("NEWS_API_KEY") 
+    api_key_news = st.secrets.get("NEWS_API_KEY")
     if not api_key_news:
         return "News API key not found."
 
     url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={api_key_news}&pageSize=3"
-    response = requests.get(url).json()
-    if response.get("articles"):
-        headlines = [f"• {article['title']}" for article in response["articles"][:3]]
-        return "\n".join(headlines)
-    return "No news available."
+    try:
+        response = requests.get(url).json()
+        if response.get("articles"):
+            headlines = [f"• {article['title']}" for article in response["articles"][:3]]
+            return "\n".join(headlines)
+        return "No news available."
+    except Exception as e:
+        return f"Error fetching news: {e}"
 
 # --- Page Config ---
 st.set_page_config(page_title="APEX Bot", layout="centered")
