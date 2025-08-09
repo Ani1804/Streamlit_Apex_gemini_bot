@@ -1,7 +1,3 @@
-from dotenv import load_dotenv
-load_dotenv(dotenv_path=".env")
-
-
 import streamlit as st
 import os
 import google.generativeai as genai
@@ -41,7 +37,12 @@ def add_background(image_path):
 add_background("danfoss image.jpg")  # Ensure image is present in same folder
 
 # --- Configure Gemini ---
-genai.configure(api_key=os.getenv("AIzaSyC3IWoW_QvQ1WJRpZCHVZhH9sSL4475-4E"))
+genai_api_key = st.secrets.get("GOOGLE_API_KEY")
+if not genai_api_key:
+    st.error("Gemini API key not found in secrets!")
+else:
+    genai.configure(api_key=genai_api_key)
+
 model = genai.GenerativeModel("models/gemini-1.5-flash")
 chat = model.start_chat(history=[])
 
@@ -54,11 +55,12 @@ current_time = datetime.now(ist).strftime("%A, %d %B %Y • %I:%M %p")
 
 # --- Weather & News ---
 def get_weather(city="Chennai"):
-    api_key = os.getenv("35747c2e49855eabf921aa5801d936d5")
+    api_key = st.secrets.get("OPENWEATHER_API_KEY")
     if not api_key:
         return "Weather API key not found."
     
-    url = f"https://api.openweathermap.org/data/2.5/weather?q={"chennai"}&appid={"35747c2e49855eabf921aa5801d936d5"}&units=metric"
+    # Use city variable & api_key from secrets
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     
     try:
         response = requests.get(url, timeout=10).json()
@@ -73,12 +75,19 @@ def get_weather(city="Chennai"):
 
 
 def get_top_news():
-    url = "https://newsapi.org/v2/top-headlines?country=in&apiKey=6636a8f3659b475382b502b56c9415d8&pageSize=3"
-    response = requests.get(url).json()
-    if response.get("articles"):
-        headlines = [f"• {article['title']}" for article in response["articles"][:3]]
-        return "\n".join(headlines)
-    return "No news available."
+    api_key_news = st.secrets.get("NEWS_API_KEY")
+    if not api_key_news:
+        return "News API key not found."
+
+    url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={api_key_news}&pageSize=3"
+    try:
+        response = requests.get(url).json()
+        if response.get("articles"):
+            headlines = [f"• {article['title']}" for article in response["articles"][:3]]
+            return "\n".join(headlines)
+        return "No news available."
+    except Exception as e:
+        return f"Error fetching news: {e}"
 
 # --- Page Config ---
 st.set_page_config(page_title="APEX Bot", layout="centered")
@@ -210,6 +219,7 @@ news = get_top_news()
 
 # --- Chat UI Box ---
 st.markdown('<div class="chat-box">', unsafe_allow_html=True)
+news_html = news.replace("\n", "<br>")
 
 # Header
 st.markdown(f"""
@@ -220,7 +230,7 @@ st.markdown(f"""
     </div>
     <div style="font-size:12px;">{current_time}</div>
     <div style="font-size:13px;margin-top:6px;">🌤️<strong>Weather:</strong>{weather}</div>
-    <div style="font-size:13px;margin-top:4px;"><strong>📰 News Headlines:</strong><br>{news.replace('\n', '<br>')}</div>
+    <div style="font-size:13px;margin-top:4px;"><strong>📰 News Headlines:</strong><br></div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -233,8 +243,7 @@ if len(st.session_state.chat_history) == 0:
         <div>
             <button class="option-button" onclick="document.getElementById('input').value='Tell me the weather';">Weather</button>
             <button class="option-button" onclick="document.getElementById('input').value='What’s in the news?';">News</button>
-        </div>
-    """, unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
 
 # Chat Body
 st.markdown('<div class="chat-body">', unsafe_allow_html=True)
